@@ -11,9 +11,6 @@ __pycache__/
 **/bin
 *.zip
 *~
-**/data_engineering
-
-.ipynb_checkpoints
 
 # C extensions
 *.so
