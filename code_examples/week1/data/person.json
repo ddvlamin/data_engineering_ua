@@ -1,0 +1,29 @@
+{
+  "id": 1,
+  "name": {
+    "first": "Dieter",
+    "last": "Devlaminck"
+  },
+  "friends": [
+    {
+      "id": 2,
+      "name": {
+        "first": "John",
+        "last": "Doe"
+      }
+    },
+    {
+      "id": 3,
+      "name": {
+        "first": "Jane",
+        "last": "Doe"
+      }
+    },
+    {
+      "name": {
+        "first": "James",
+        "last": "Roe"
+      }
+    }
+  ]
+}
