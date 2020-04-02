@@ -3,7 +3,7 @@ Storing GDELT mentions
 
 Example use:
 
-python ./preprocessing.py --events /home/ubuntu/data/project/gdelt/sample/english/events/ /home/ubuntu/data/project/gdelt/sample/multilingual/events/ --mentions /home/ubuntu/data/project/gdelt/sample/english/mentions/ /home/ubuntu/data/project/gdelt/sample/multilingual/mentions/ --regex "(?=.*[ck]orona)(?=.*virus)|[Cc][Oo][Vv][Ii][Dd]-?19" --dbHost localhost --dbPort 3306 --dbUser root --dbPassword testtest --dbName Corona --dbTable GeoEventMentions --fips /home/ubuntu/data/project/gdelt/fips2iso_country_codes.tsv
+python ./preprocessing.py corona --events /home/ubuntu/data/project/gdelt/sample/english/events/ /home/ubuntu/data/project/gdelt/sample/multilingual/events/ --mentions /home/ubuntu/data/project/gdelt/sample/english/mentions/ /home/ubuntu/data/project/gdelt/sample/multilingual/mentions/ --regex "(?=.*[ck]orona)(?=.*virus)|[Cc][Oo][Vv][Ii][Dd]-?19" --dbHost localhost --dbPort 3306 --dbUser root --dbPassword testtest --dbName GDELT --dbTable GeoEvents --fips /home/ubuntu/data/project/gdelt/fips2iso_country_codes.tsv
 """
 
 import argparse
@@ -92,16 +92,15 @@ def connection_factory(user, password, host, database):
 def store_records(records, connection_factory, db_table):
   cnx, cursor = connection_factory()
   
-  insert_statement_str = f"insert into {db_table} (GlobalEventId,DateAdded,CountryCode,Latitude,Longitude,NumberOfMentions) VALUES (%s, %s, %s, %s, %s, %s);"
+  insert_statement_str = f"insert into {db_table} (EventName,DateAdded,CountryCode,NumberOfEvents,NumberOfMentions) VALUES (%s, %s, %s, %s, %s);"
   
   record_list = list()
   for record in records:
     record_list.append((
-        record["GlobalEventId"],
+        record["EventName"],
         record["DateAdded"],
-        record["Actor1Geo_CountryCode"],
-        record["lat"],
-        record["long"],
+        record["CountryCode"],
+        record["NumberOfEvents"],
         record["NumberOfMentions"]
     ))
       
@@ -121,6 +120,7 @@ def load_fips2iso(filepath):
 if __name__ == "__main__":
 
   parser = argparse.ArgumentParser(description=__doc__)
+  parser.add_argument("event_name", help="name of the event")
   parser.add_argument("--events", nargs="*", help="input folders for events")
   parser.add_argument("--mentions", nargs="*", help="input folders for mentions")
   parser.add_argument("--regex", help="regex", default="(?=.*[ck]orona)(?=.*virus)|[Cc][Oo][Vv][Ii][Dd]-?19")
@@ -133,6 +133,7 @@ if __name__ == "__main__":
   parser.add_argument("--fips", help="path to fips2iso code file")
   args = parser.parse_args(sys.argv[1:])
 
+  event_name = args.event_name
   dbHost = args.dbHost
   dbPort = args.dbPort
   dbUser = args.dbUser
@@ -169,12 +170,35 @@ if __name__ == "__main__":
   broadcast_fips2iso = sc.broadcast(fips2iso)
   event_mentions_iso_rdd = event_mentions_rdd.map(convert_fips2iso) 
 
+  #
+  # group by country code and date
+  #
+
+  country_date_count_rdd = (event_mentions_iso_rdd
+      .map(lambda x: (
+            (x["Actor1Geo_CountryCode"], x["DateAdded"].date()), 
+            (1, x["NumberOfMentions"])
+          )
+      )
+      .reduceByKey(lambda x, y: (x[0]+y[0],x[1]+y[1]))
+      .map(lambda x:
+        {
+          "EventName": event_name,
+          "DateAdded": x[0][1],
+          "CountryCode": x[0][0],
+          "NumberOfEvents": x[1][0],
+          "NumberOfMentions": x[1][1]
+        }
+      )
+      .filter(lambda x: x["CountryCode"])
+  )
+
   connection_factory = partial(connection_factory, 
                                user=dbUser, 
                                password=dbPassword, 
                                host=dbHost,
                                database=dbName
                       )
-  event_mentions_iso_rdd.foreachPartition(partial(store_records, connection_factory=connection_factory, db_table=dbTable))
+  country_date_count_rdd.foreachPartition(partial(store_records, connection_factory=connection_factory, db_table=dbTable))
 
   sc.stop()
