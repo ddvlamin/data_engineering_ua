@@ -1,0 +1,5 @@
+s3://ua-data-engineering-datasets/project/code/preprocessing.py corona --events s3://ua-data-engineering-datasets/project/data/multilingual/events/ s3://ua-data-engineering-datasets/project/data/english/events/ --mentions s3://ua-data-engineering-datasets/project/data/multilingual/mentions/ s3://ua-data-engineering-datasets/project/data/english/mentions/ --regex (?=.*[ck]orona)(?=.*virus)|[Cc][Oo][Vv][Ii][Dd]-?19 --dbHost gdelt.cievtxoi5gch.us-east-1.rds.amazonaws.com --dbPort 3306 --dbUser admin --dbPassword testtest --dbName GDELT --dbTable GeoEvents --fips /home/hadoop/fips2iso_country_codes.tsv
+
+[{"configurations":[{"classification":"export","properties":{"PYSPARK_PYTHON":"/usr/bin/python3"}}],"classification":"spark-env","properties":{}}]
+
+s3://ua-data-engineering-datasets/project/resources/bootstrap.sh

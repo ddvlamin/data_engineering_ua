@@ -64,7 +64,6 @@ def convert_types(record, converters):
       record[col_name] = convert_func(record[col_name])
   return record
 
-
 def matches_regex(record, compiled_regex):
   url = record["url"]
   return compiled_regex.search(url) != None
@@ -150,11 +149,19 @@ if __name__ == "__main__":
   events_rdd = sc.textFile(",".join(events))
   mentions_rdd = sc.textFile(",".join(mentions))
 
+  #
+  # process events
+  #
+
   events_split_rdd = events_rdd.map(tab_split_func)
   events_json_rdd = events_split_rdd.map(partial(transform_to_json, index2column=index2events_column))
   events_converted_rdd = events_json_rdd.map(partial(convert_types, converters=type_converters))
   corona_events_rdd = events_converted_rdd.filter(partial(matches_regex,compiled_regex=regex))
   corona_forjoin_rdd = corona_events_rdd.map(lambda record: (record["GlobalEventId"], record))
+
+  #
+  # process mentions
+  #
 
   mentions_count_rdd = (mentions_rdd
        .map(tab_split_func)
