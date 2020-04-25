@@ -1,1 +1,3 @@
-some quick and dirty code examples to show in class
+some code examples to show in class
+
+TODO: clean it up
