@@ -1,1 +1,0 @@
-{"gender": "male","age": 30,"name": {"firstname": "James","lastname": "Doe"},"email": "james.doe@uantwerpen.be","connections": [ {"firstname": "John", "lastname": "Doe", "gender": "male", "age": 40 },{"firstname": "Jane", "lastname": "Doe", "gender": "female", "age": 52 }]}
